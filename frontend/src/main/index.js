@@ -9,34 +9,40 @@ let backendProcess = null
 function startBackend() {
   return new Promise((resolve, reject) => {
     try {
-      const backendPath = is.dev
-        ? join(__dirname, '../../../backend/dist/main.exe') // might need to change this path
-        : join(process.resourcesPath, 'backend/main.exe') // prod env path
+      let backendPath, backendArgs;
+      if (is.dev) {
+        backendPath = join(__dirname, '../../../backend/dist/main/main');
+        backendArgs = [];
+      } else {
+        backendPath = join(process.resourcesPath, 'backend/main');
+        backendArgs = [];
+      }
+      console.log('Starting backend process:', backendPath, backendArgs);
 
-      backendProcess = spawn(backendPath, [], {
+      backendProcess = spawn(backendPath, backendArgs, {
         detached: false,
-        stdio: ['ignore', 'ignore', 'ignore']
-      })
+        stdio: 'inherit' // Show backend output in Electron terminal for debugging
+      });
 
       backendProcess.on('error', (error) => {
-        reject(error)
-      })
+        reject(error);
+      });
 
       backendProcess.on('close', () => {
-        backendProcess = null
-      })
+        backendProcess = null;
+      });
 
       setTimeout(() => {
         if (backendProcess && !backendProcess.killed) {
-          resolve()
+          resolve();
         } else {
-          reject(new Error('Backend failed to start'))
+          reject(new Error('Backend failed to start'));
         }
-      }, 2000)
+      }, 2000);
     } catch (error) {
-      reject(error)
+      reject(error);
     }
-  })
+  });
 }
 
 function stopBackend() {
